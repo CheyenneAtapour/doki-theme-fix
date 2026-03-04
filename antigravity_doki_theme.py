@@ -83,6 +83,12 @@ CHARACTERS = {
     "yotsuba":          ("/quintuplets/yotsuba/dark/yotsuba_dark.png", "yotsuba_dark.png"),
     "itsuki":           ("/quintuplets/itsuki/light/itsuki_light.png", "itsuki_light.png"),
     
+    # === Chuunibyou ===
+    "rikka":            ("/chuunibyou/rikka/dark/rikka_dark.png", "rikka_dark.png"),
+    
+    # === Monogatari ===
+    "tsubasa":          ("/monogatari/hanekawa/dark/hanekawa_dark.png", "hanekawa_dark.png"),
+    
     # === Other ===
     "miku":             ("/miscellaneous/miku/miku.png", "miku.png"),
     "kurisu":           ("/steinsGate/kurisu/dark/kurisu_dark.png", "kurisu_dark.png"),
@@ -102,11 +108,11 @@ CHARACTERS = {
 }
 
 # >>> CHANGE THIS to switch characters! <<<
-SELECTED_CHARACTER = "echidna"
+SELECTED_CHARACTER = "tsubasa"
 
 # Opacity (0.0 = invisible, 1.0 = fully opaque)
 STICKER_OPACITY = 0.3
-WALLPAPER_OPACITY = 0.15
+WALLPAPER_OPACITY = 0.5
 
 # =============================================================================
 
