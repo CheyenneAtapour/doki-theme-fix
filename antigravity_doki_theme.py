@@ -108,11 +108,11 @@ CHARACTERS = {
 }
 
 # >>> CHANGE THIS to switch characters! <<<
-SELECTED_CHARACTER = "tsubasa"
+SELECTED_CHARACTER = "ishtar_dark"
 
 # Opacity (0.0 = invisible, 1.0 = fully opaque)
 STICKER_OPACITY = 0.3
-WALLPAPER_OPACITY = 0.5
+WALLPAPER_OPACITY = 0.45
 
 # =============================================================================
 
@@ -197,6 +197,17 @@ injected_css = f"""
 .monaco-editor .current-line {{
     z-index: 10000 !important;
     position: relative !important;
+}}
+
+/* Ensure UI widgets, accept/reject buttons, and overlays remain clickable (above text) */
+.monaco-editor .view-zones,
+.monaco-editor .contentWidgets,
+.monaco-editor .overlayWidgets,
+.monaco-editor .margin-view-overlays,
+.monaco-editor .zone-widget,
+.monaco-editor .inline-chat-widget,
+.monaco-editor .monaco-hover {{
+    z-index: 10001 !important;
 }}
 
 /* Set the wallpaper on the main container as a fallback */
