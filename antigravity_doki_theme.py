@@ -105,10 +105,13 @@ CHARACTERS = {
     "yumeko":           ("/kakegurui/yumeko/dark/yumeko_dark.png", "yumeko_dark.png"),
     "rimuru":           ("/slime/rimuru/dark/rimuru_dark.png", "rimuru_dark.png"),
     "soma":             ("/shokugeki/soma/dark/soma_dark.png", "soma_dark.png"),
+    # === Custom ===
+    "orchis":           ("file:///Users/cheyenneatapour/Documents/github/doki-theme-fix/Orchis_leader.webp", "file:///Users/cheyenneatapour/Documents/github/doki-theme-fix/orchis.png"),
+    "luna":             ("file:///Users/cheyenneatapour/Documents/github/doki-theme-fix/Luna_leader.png", "file:///Users/cheyenneatapour/Documents/github/doki-theme-fix/Luna_wallpaper.png"),
 }
 
 # >>> CHANGE THIS to switch characters! <<<
-SELECTED_CHARACTER = "ishtar_dark"
+SELECTED_CHARACTER = "orchis"
 
 # Opacity (0.0 = invisible, 1.0 = fully opaque)
 STICKER_OPACITY = 0.3
@@ -131,32 +134,78 @@ if len(sys.argv) > 1:
 css_path = os.path.join(app_dir, "workbench.desktop.main.css")
 js_path = os.path.join(app_dir, "workbench.desktop.main.js")
 
-wallpaper_url = f"https://doki.assets.unthrottled.io/backgrounds/wallpapers/transparent/{wallpaper_name}"
-sticker_url = f"https://doki.assets.unthrottled.io/stickers/vscode{sticker_path}"
+if wallpaper_name.startswith("http") or wallpaper_name.startswith("file://"):
+    wallpaper_url = wallpaper_name
+else:
+    wallpaper_url = f"https://doki.assets.unthrottled.io/backgrounds/wallpapers/transparent/{wallpaper_name}"
+
+if sticker_path.startswith("http") or sticker_path.startswith("file://"):
+    sticker_url = sticker_path
+else:
+    sticker_url = f"https://doki.assets.unthrottled.io/stickers/vscode{sticker_path}"
 
 # We must download them locally because Antigravity's Strict Content Security Policy (CSP) blocks external images!
-# Since /Applications requires sudo, we download to /tmp instead.
-local_wallpaper_path = f"/tmp/doki_wallpaper_{SELECTED_CHARACTER}.png"
-local_sticker_path = f"/tmp/doki_sticker_{SELECTED_CHARACTER}.png"
+local_wallpaper_path = os.path.join(app_dir, "doki_wallpaper.png")
+local_sticker_path = os.path.join(app_dir, "doki_sticker.png")
 
 if not os.path.exists(css_path) or not os.path.exists(js_path):
     print(f"Error: Could not find Antigravity CSS/JS files at {app_dir}")
     print("Please make sure the path is correct.")
     sys.exit(1)
 
-print(f"Downloading {SELECTED_CHARACTER.capitalize()} assets locally to bypass CSP...")
-try:
-    urllib.request.urlretrieve(wallpaper_url, local_wallpaper_path)
-    urllib.request.urlretrieve(sticker_url, local_sticker_path)
-    print("Assets downloaded successfully to /tmp!")
-except Exception as e:
-    print(f"Failed to download assets: {e}")
-    sys.exit(1)
+import subprocess
+import shutil
 
-# Format for VS Code CSS/JS local file access
-local_wallpaper_css_url = f"vscode-file://vscode-app{local_wallpaper_path}"
-local_sticker_js_url = f"vscode-file://vscode-app{local_sticker_path}"
+if wallpaper_url.startswith("file://") and sticker_url.startswith("file://"):
+    print(f"Using local {SELECTED_CHARACTER.capitalize()} assets...")
+    # Strip the file:// prefix to get the absolute path on disk
+    local_wallpaper_path_tmp = wallpaper_url.replace("file://", "")
+    local_sticker_path_tmp = sticker_url.replace("file://", "")
+    
+    # Antigravity CSP blocks /Users/ paths! We must copy them to the protected /Applications directory.
+    print("Assets are local! Please manually copy them to bypass CSP blocks:")
+    print(f"  {local_wallpaper_path}")
+    print(f"  {local_sticker_path}")
+    
+    # The CSS/JS MUST point to the /Applications/... directory for Antigravity to render them!
+    local_wallpaper_css_url = f"vscode-file://vscode-app{local_wallpaper_path}"
+    local_sticker_js_url = f"vscode-file://vscode-app{local_sticker_path}"
+else:
+    print(f"Downloading {SELECTED_CHARACTER.capitalize()} assets locally to bypass CSP...")
+    try:
+        # Use curl to download to /tmp first so we don't need sudo for the network request
+        tmp_wallpaper = f"/tmp/doki_wallpaper_{SELECTED_CHARACTER}.png"
+        tmp_sticker = f"/tmp/doki_sticker_{SELECTED_CHARACTER}.png"
+        
+        cmd_wallpaper = [
+            "curl", "-sL", "-A", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36", 
+            wallpaper_url, "-o", tmp_wallpaper
+        ]
+        subprocess.run(cmd_wallpaper, check=True)
+        
+        cmd_sticker = [
+            "curl", "-sL", "-A", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36", 
+            sticker_url, "-o", tmp_sticker
+        ]
+        subprocess.run(cmd_sticker, check=True)
+        
+        # Note: Copying to the protected /Applications directory requires sudo permissions
+        # We leave that step to the user/runner script rather than hanging on subprocess prompts
+        print("Assets downloaded to /tmp! Please manually copy them to:")
+        print(f"  {local_wallpaper_path}")
+        print(f"  {local_sticker_path}")
+        
+        # We must explicitly set variables for the subsequent CSS injection steps
+        # to read /tmp rather than the missing /Applications location
+        local_wallpaper_path_tmp = tmp_wallpaper
+        local_sticker_path_tmp = tmp_sticker
+        
+        local_wallpaper_css_url = f"vscode-file://vscode-app{local_wallpaper_path_tmp}"
+        local_sticker_js_url = f"vscode-file://vscode-app{local_sticker_path_tmp}"
 
+    except Exception as e:
+        print(f"Failed to download assets: {e}")
+        sys.exit(1)
 
 # -------- INJECT CSS BACKGROUND --------
 with open(css_path, "r", encoding="utf-8") as f:
@@ -211,7 +260,7 @@ injected_css = f"""
     z-index: 10001 !important;
 }}
 
-/* Elevate side panels to ensure text remains on top of the sticker */
+/* Elevate sidebars, auxiliary bars (agent window), and panels above the sticker */
 .monaco-workbench .part.sidebar,
 .monaco-workbench .part.auxiliarybar,
 .monaco-workbench .part.panel {{
