@@ -135,8 +135,9 @@ wallpaper_url = f"https://doki.assets.unthrottled.io/backgrounds/wallpapers/tran
 sticker_url = f"https://doki.assets.unthrottled.io/stickers/vscode{sticker_path}"
 
 # We must download them locally because Antigravity's Strict Content Security Policy (CSP) blocks external images!
-local_wallpaper_path = os.path.join(app_dir, "doki_wallpaper.png")
-local_sticker_path = os.path.join(app_dir, "doki_sticker.png")
+# Since /Applications requires sudo, we download to /tmp instead.
+local_wallpaper_path = f"/tmp/doki_wallpaper_{SELECTED_CHARACTER}.png"
+local_sticker_path = f"/tmp/doki_sticker_{SELECTED_CHARACTER}.png"
 
 if not os.path.exists(css_path) or not os.path.exists(js_path):
     print(f"Error: Could not find Antigravity CSS/JS files at {app_dir}")
@@ -147,7 +148,7 @@ print(f"Downloading {SELECTED_CHARACTER.capitalize()} assets locally to bypass C
 try:
     urllib.request.urlretrieve(wallpaper_url, local_wallpaper_path)
     urllib.request.urlretrieve(sticker_url, local_sticker_path)
-    print("Assets downloaded successfully!")
+    print("Assets downloaded successfully to /tmp!")
 except Exception as e:
     print(f"Failed to download assets: {e}")
     sys.exit(1)
@@ -210,6 +211,13 @@ injected_css = f"""
     z-index: 10001 !important;
 }}
 
+/* Elevate side panels to ensure text remains on top of the sticker */
+.monaco-workbench .part.sidebar,
+.monaco-workbench .part.auxiliarybar,
+.monaco-workbench .part.panel {{
+    z-index: 10000 !important;
+}}
+
 /* Set the wallpaper on the main container as a fallback */
 .monaco-workbench .part.editor {{
     background-image: url('{local_wallpaper_css_url}') !important;
@@ -260,7 +268,7 @@ setTimeout(function() {{
     doki_sticker.style.height = "auto";
     doki_sticker.style.opacity = "{STICKER_OPACITY}";
     doki_sticker.style.pointerEvents = "none";
-    doki_sticker.style.zIndex = "2147483647"; // Absolute maximum
+    doki_sticker.style.zIndex = "9998"; // Place behind elevated UI elements
     
     // Remove old sticker if it exists from a previous injection that wasn't cleaned up by Antigravity reload
     const prev = document.getElementById("doki_sticker_injected");
