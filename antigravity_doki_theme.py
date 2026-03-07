@@ -260,13 +260,6 @@ injected_css = f"""
     z-index: 10001 !important;
 }}
 
-/* Elevate sidebars, auxiliary bars (agent window), and panels above the sticker */
-.monaco-workbench .part.sidebar,
-.monaco-workbench .part.auxiliarybar,
-.monaco-workbench .part.panel {{
-    z-index: 10000 !important;
-}}
-
 /* Set the wallpaper on the main container as a fallback */
 .monaco-workbench .part.editor {{
     background-image: url('{local_wallpaper_css_url}') !important;
