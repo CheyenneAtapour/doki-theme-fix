@@ -239,12 +239,19 @@ injected_css = f"""
     background-repeat: no-repeat !important;
     opacity: {WALLPAPER_OPACITY} !important;
     pointer-events: none !important;
-    z-index: 9999 !important;
+    z-index: 9997 !important;
 }}
 
 /* Ensure the background image doesn't obscure the text */
-.monaco-editor .view-lines,
-.monaco-editor .current-line {{
+.monaco-workbench .part.editor > .content .monaco-editor {{
+    z-index: 10000 !important;
+    position: relative !important;
+}}
+
+/* Elevate sidebars, auxiliary bars (agent window), and panels above the sticker */
+.monaco-workbench .part.sidebar > .content,
+.monaco-workbench .part.auxiliarybar > .content,
+.monaco-workbench .part.panel > .content {{
     z-index: 10000 !important;
     position: relative !important;
 }}
