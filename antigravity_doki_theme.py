@@ -256,7 +256,7 @@ injected_css = f"""
 .monaco-editor .zone-widget,
 .monaco-editor .inline-chat-widget,
 .monaco-editor .monaco-hover {{
-    z-index: 10001 !important;
+    z-index: 10002 !important;
 }}
 
 /* Set the wallpaper on the main container as a fallback */
