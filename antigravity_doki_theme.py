@@ -248,14 +248,6 @@ injected_css = f"""
     position: relative !important;
 }}
 
-/* Elevate sidebars, auxiliary bars (agent window), and panels above the sticker */
-.monaco-workbench .part.sidebar > .content,
-.monaco-workbench .part.auxiliarybar > .content,
-.monaco-workbench .part.panel > .content {{
-    z-index: 10000 !important;
-    position: relative !important;
-}}
-
 /* Ensure UI widgets, accept/reject buttons, and overlays remain clickable (above text) */
 .monaco-editor .view-zones,
 .monaco-editor .contentWidgets,
