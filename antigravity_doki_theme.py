@@ -65,7 +65,6 @@ CHARACTERS = {
     # === Dragon Maid ===
     "tohru":            ("/dragonMaid/tohru/light/tohru_light.png", "tohru_light.png"),
     "kanna":            ("/dragonMaid/kanna/dark/kanna_dark.png", "kanna_dark.png"),
-    
     # === NekoPara ===
     "chocola":          ("/nekoPara/chocola/dark/chocola_dark.png", "chocola_dark.png"),
     "vanilla":          ("/nekoPara/vanilla/dark/vanilla_dark.png", "vanilla_dark.png"),
@@ -75,6 +74,8 @@ CHARACTERS = {
     "azuki":            ("/nekoPara/azuki/dark/azuki_dark.png", "azuki_dark.png"),
     "coconut":          ("/nekoPara/coconut/dark/coconut_dark.png", "coconut_dark.png"),
     "cinnamon":         ("/nekoPara/cinnamon/dark/cinnamon_dark.png", "cinnamon_dark.png"),
+
+
     
     # === Quintessential Quintuplets ===
     "ichika":           ("/quintuplets/ichika/light/ichika_light.png", "ichika_light.png"),
@@ -255,7 +256,8 @@ injected_css = f"""
 .monaco-editor .margin-view-overlays,
 .monaco-editor .zone-widget,
 .monaco-editor .inline-chat-widget,
-.monaco-editor .monaco-hover {{
+.monaco-editor .monaco-hover,
+.monaco-editor .overflowingContentWidgets {{
     z-index: 10002 !important;
 }}
 
