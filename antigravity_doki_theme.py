@@ -16,12 +16,8 @@ CHARACTERS = {
     "emilia_light":     ("/reZero/emilia/light/emilia_light.png", "emilia_light.png"),
     "beatrice":         ("/reZero/beatrice/beatrice.png", "beatrice.png"),
     
-    # === Darling in the Franxx ===
-    "zero_two_rose":    ("/franxx/zeroTwo/rose/zero_two_rose.png", "zero_two_rose.png"),
-    "zero_two_obsidian": ("/franxx/zeroTwo/obsidian/zero_two_obsidian.png", "zero_two_obsidian.png"),
-    "zero_two_sakura":  ("/franxx/zeroTwo/sakura/zero_two_sakura.png", "zero_two_sakura.png"),
-    "zero_two_lily":    ("/franxx/zeroTwo/lily/zero_two_lily.png", "zero_two_lily.png"),
-    "hiro":             ("/franxx/hiro/dark/hiro_dark.png", "hiro_dark.png"),
+
+
     
     # === DDLC (Literature Club) ===
     "monika_dark":      ("/literature/monika/dark/just_monika_dark.png", "just_monika_dark.png"),
@@ -65,7 +61,6 @@ CHARACTERS = {
     # === Dragon Maid ===
     "tohru":            ("/dragonMaid/tohru/light/tohru_light.png", "tohru_light.png"),
     "kanna":            ("/dragonMaid/kanna/dark/kanna_dark.png", "kanna_dark.png"),
-    
     # === NekoPara ===
     "chocola":          ("/nekoPara/chocola/dark/chocola_dark.png", "chocola_dark.png"),
     "vanilla":          ("/nekoPara/vanilla/dark/vanilla_dark.png", "vanilla_dark.png"),
@@ -75,6 +70,8 @@ CHARACTERS = {
     "azuki":            ("/nekoPara/azuki/dark/azuki_dark.png", "azuki_dark.png"),
     "coconut":          ("/nekoPara/coconut/dark/coconut_dark.png", "coconut_dark.png"),
     "cinnamon":         ("/nekoPara/cinnamon/dark/cinnamon_dark.png", "cinnamon_dark.png"),
+
+
     
     # === Quintessential Quintuplets ===
     "ichika":           ("/quintuplets/ichika/light/ichika_light.png", "ichika_light.png"),
@@ -221,45 +218,9 @@ if start_marker_css in css_content and end_marker_css in css_content:
 
 injected_css = f"""
 {start_marker_css}
-/* --- BACKGROUND WALLPAPER --- */
-.monaco-workbench .part.editor > .content {{
-    position: relative !important;
-}}
+/* --- BACKGROUND WALLPAPER (minimal approach - no z-index hacks) --- */
 
-.monaco-workbench .part.editor > .content::after {{
-    content: '' !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    background-image: url('{local_wallpaper_css_url}') !important;
-    background-position: right bottom !important;
-    background-size: auto 100% !important;
-    background-repeat: no-repeat !important;
-    opacity: {WALLPAPER_OPACITY} !important;
-    pointer-events: none !important;
-    z-index: 9997 !important;
-}}
-
-/* Ensure the background image doesn't obscure the text */
-.monaco-workbench .part.editor > .content .monaco-editor {{
-    z-index: 10000 !important;
-    position: relative !important;
-}}
-
-/* Ensure UI widgets, accept/reject buttons, and overlays remain clickable (above text) */
-.monaco-editor .view-zones,
-.monaco-editor .contentWidgets,
-.monaco-editor .overlayWidgets,
-.monaco-editor .margin-view-overlays,
-.monaco-editor .zone-widget,
-.monaco-editor .inline-chat-widget,
-.monaco-editor .monaco-hover {{
-    z-index: 10002 !important;
-}}
-
-/* Set the wallpaper on the main container as a fallback */
+/* Put the wallpaper on the outermost editor container */
 .monaco-workbench .part.editor {{
     background-image: url('{local_wallpaper_css_url}') !important;
     background-position: right bottom !important;
@@ -267,14 +228,28 @@ injected_css = f"""
     background-repeat: no-repeat !important;
 }}
 
-/* Force all inner editor layers to be transparent so the wallpaper shows through */
+/* Force ALL inner editor layers to be transparent so the wallpaper shows through */
 .monaco-workbench .part.editor > .content,
+.monaco-workbench .part.editor > .content .split-view-container,
+.monaco-workbench .part.editor > .content .split-view-view,
+.monaco-workbench .part.editor > .content .editor-group-container,
+.monaco-workbench .part.editor > .content .editor-container,
 .monaco-workbench .part.editor > .content .editor-instance,
 .monaco-workbench .part.editor > .content .monaco-editor,
-.monaco-workbench .part.editor > .content .monaco-editor-background,
-.monaco-workbench .part.editor > .content .margin {{
+.monaco-workbench .part.editor > .content .overflow-guard,
+.monaco-workbench .part.editor > .content .margin,
+.monaco-workbench .part.editor > .content .monaco-scrollable-element,
+.monaco-workbench .part.editor > .content .lines-content,
+.monaco-workbench .part.editor > .content .view-lines,
+.monaco-workbench .part.editor > .content .minimap,
+.monaco-workbench .part.editor > .content .editor-scrollable {{
     background-color: transparent !important;
     background-image: none !important;
+}}
+
+/* Dark tint on the editor background layer to dim the wallpaper and improve text readability */
+.monaco-workbench .part.editor > .content .monaco-editor-background {{
+    background-color: rgba(0, 0, 0, {1.0 - WALLPAPER_OPACITY}) !important;
 }}
 {end_marker_css}
 """
@@ -310,7 +285,7 @@ setTimeout(function() {{
     doki_sticker.style.opacity = "{STICKER_OPACITY}";
     doki_sticker.style.pointerEvents = "none";
     doki_sticker.style.zIndex = "9998"; // Place behind elevated UI elements
-    
+
     // Remove old sticker if it exists from a previous injection that wasn't cleaned up by Antigravity reload
     const prev = document.getElementById("doki_sticker_injected");
     if (prev) {{
@@ -319,6 +294,57 @@ setTimeout(function() {{
     document.body.appendChild(doki_sticker);
     console.log("Injected Doki sticker!");
 }}, 3000);
+
+// --- DOM INSPECTOR: MutationObserver to catch agent accept/reject buttons when they appear ---
+(function() {{
+    function getPath(el) {{
+        const path = [];
+        for (let depth = 0; depth < 15 && el && el !== document.body; depth++) {{
+            let id = el.id ? "#" + el.id : "";
+            let cls = el.className && typeof el.className === "string" ? "." + el.className.trim().split(/\\s+/).join(".") : "";
+            path.unshift(el.tagName.toLowerCase() + id + cls);
+            el = el.parentElement;
+        }}
+        return path.join(" > ");
+    }}
+
+    function logElement(label, el) {{
+        const cs = window.getComputedStyle(el);
+        console.log("[DOKI DEBUG] " + label + ": " + getPath(el)
+            + " | text: " + (el.textContent || "").substring(0, 80).replace(/\\n/g, " ")
+            + " | title: " + (el.title || "")
+            + " | z-index: " + cs.zIndex
+            + " | pointer-events: " + cs.pointerEvents
+            + " | position: " + cs.position);
+    }}
+
+    // Watch for ANY new elements added to the editor area
+    const observer = new MutationObserver(function(mutations) {{
+        mutations.forEach(function(mutation) {{
+            mutation.addedNodes.forEach(function(node) {{
+                if (node.nodeType !== 1) return;
+                // Log any element that looks like it could be accept/reject/agent related
+                const html = node.outerHTML || "";
+                const cls = node.className || "";
+                const text = (node.textContent || "").toLowerCase();
+                if (text.includes("accept") || text.includes("reject") || text.includes("discard")
+                    || text.includes("apply") || text.includes("revert")
+                    || cls.includes("diff") || cls.includes("inline")
+                    || cls.includes("agent") || cls.includes("action")
+                    || cls.includes("widget") || cls.includes("zone")
+                    || cls.includes("review") || cls.includes("change")
+                    || cls.includes("ghost") || cls.includes("suggest")) {{
+                    logElement("NEW NODE", node);
+                    // Also log interactive children
+                    const kids = node.querySelectorAll("button, a, [role='button'], .action-label, .codicon");
+                    kids.forEach(function(k) {{ logElement("  CHILD", k); }});
+                }}
+            }});
+        }});
+    }});
+    observer.observe(document.body, {{ childList: true, subtree: true }});
+    console.log("[DOKI DEBUG] MutationObserver installed - waiting for agent accept/reject buttons...");
+}})();
 {end_marker_js}
 """
 
@@ -330,4 +356,19 @@ print(f"Successfully injected {SELECTED_CHARACTER.capitalize()} background CSS i
 print(f"AND successfully injected {SELECTED_CHARACTER.capitalize()} sticker JS into {js_path}!")
 print(f"  - Sticker opacity: {STICKER_OPACITY}")
 print(f"  - Wallpaper opacity: {WALLPAPER_OPACITY}")
+
+# -------- RE-SIGN THE APP (macOS Gatekeeper) --------
+app_bundle = "/Applications/Antigravity.app"
+if os.path.isdir(app_bundle):
+    print("Re-signing Antigravity.app to satisfy macOS Gatekeeper...")
+    result = subprocess.run(
+        ["codesign", "--force", "--deep", "--sign", "-", app_bundle],
+        capture_output=True, text=True
+    )
+    if result.returncode == 0:
+        print("Re-signed successfully!")
+    else:
+        print(f"Warning: codesign failed (exit {result.returncode}): {result.stderr.strip()}")
+        print("You may need to run: codesign --force --deep --sign - /Applications/Antigravity.app")
+
 print("Please restart Antigravity to see the changes.")
