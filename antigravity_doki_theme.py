@@ -222,46 +222,9 @@ if start_marker_css in css_content and end_marker_css in css_content:
 
 injected_css = f"""
 {start_marker_css}
-/* --- BACKGROUND WALLPAPER --- */
-.monaco-workbench .part.editor > .content {{
-    position: relative !important;
-}}
+/* --- BACKGROUND WALLPAPER (minimal approach - no z-index hacks) --- */
 
-.monaco-workbench .part.editor > .content::after {{
-    content: '' !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    background-image: url('{local_wallpaper_css_url}') !important;
-    background-position: right bottom !important;
-    background-size: auto 100% !important;
-    background-repeat: no-repeat !important;
-    opacity: {WALLPAPER_OPACITY} !important;
-    pointer-events: none !important;
-    z-index: 9997 !important;
-}}
-
-/* Ensure the background image doesn't obscure the text */
-.monaco-workbench .part.editor > .content .monaco-editor {{
-    z-index: 10000 !important;
-    position: relative !important;
-}}
-
-/* Ensure UI widgets, accept/reject buttons, and overlays remain clickable (above text) */
-.monaco-editor .view-zones,
-.monaco-editor .contentWidgets,
-.monaco-editor .overlayWidgets,
-.monaco-editor .margin-view-overlays,
-.monaco-editor .zone-widget,
-.monaco-editor .inline-chat-widget,
-.monaco-editor .monaco-hover,
-.monaco-editor .overflowingContentWidgets {{
-    z-index: 10002 !important;
-}}
-
-/* Set the wallpaper on the main container as a fallback */
+/* Put the wallpaper on the outermost editor container */
 .monaco-workbench .part.editor {{
     background-image: url('{local_wallpaper_css_url}') !important;
     background-position: right bottom !important;
@@ -269,12 +232,22 @@ injected_css = f"""
     background-repeat: no-repeat !important;
 }}
 
-/* Force all inner editor layers to be transparent so the wallpaper shows through */
+/* Force ALL inner editor layers to be transparent so the wallpaper shows through */
 .monaco-workbench .part.editor > .content,
+.monaco-workbench .part.editor > .content .split-view-container,
+.monaco-workbench .part.editor > .content .split-view-view,
+.monaco-workbench .part.editor > .content .editor-group-container,
+.monaco-workbench .part.editor > .content .editor-container,
 .monaco-workbench .part.editor > .content .editor-instance,
 .monaco-workbench .part.editor > .content .monaco-editor,
 .monaco-workbench .part.editor > .content .monaco-editor-background,
-.monaco-workbench .part.editor > .content .margin {{
+.monaco-workbench .part.editor > .content .overflow-guard,
+.monaco-workbench .part.editor > .content .margin,
+.monaco-workbench .part.editor > .content .monaco-scrollable-element,
+.monaco-workbench .part.editor > .content .lines-content,
+.monaco-workbench .part.editor > .content .view-lines,
+.monaco-workbench .part.editor > .content .minimap,
+.monaco-workbench .part.editor > .content .editor-scrollable {{
     background-color: transparent !important;
     background-image: none !important;
 }}
@@ -312,7 +285,7 @@ setTimeout(function() {{
     doki_sticker.style.opacity = "{STICKER_OPACITY}";
     doki_sticker.style.pointerEvents = "none";
     doki_sticker.style.zIndex = "9998"; // Place behind elevated UI elements
-    
+
     // Remove old sticker if it exists from a previous injection that wasn't cleaned up by Antigravity reload
     const prev = document.getElementById("doki_sticker_injected");
     if (prev) {{
@@ -321,6 +294,57 @@ setTimeout(function() {{
     document.body.appendChild(doki_sticker);
     console.log("Injected Doki sticker!");
 }}, 3000);
+
+// --- DOM INSPECTOR: MutationObserver to catch agent accept/reject buttons when they appear ---
+(function() {{
+    function getPath(el) {{
+        const path = [];
+        for (let depth = 0; depth < 15 && el && el !== document.body; depth++) {{
+            let id = el.id ? "#" + el.id : "";
+            let cls = el.className && typeof el.className === "string" ? "." + el.className.trim().split(/\\s+/).join(".") : "";
+            path.unshift(el.tagName.toLowerCase() + id + cls);
+            el = el.parentElement;
+        }}
+        return path.join(" > ");
+    }}
+
+    function logElement(label, el) {{
+        const cs = window.getComputedStyle(el);
+        console.log("[DOKI DEBUG] " + label + ": " + getPath(el)
+            + " | text: " + (el.textContent || "").substring(0, 80).replace(/\\n/g, " ")
+            + " | title: " + (el.title || "")
+            + " | z-index: " + cs.zIndex
+            + " | pointer-events: " + cs.pointerEvents
+            + " | position: " + cs.position);
+    }}
+
+    // Watch for ANY new elements added to the editor area
+    const observer = new MutationObserver(function(mutations) {{
+        mutations.forEach(function(mutation) {{
+            mutation.addedNodes.forEach(function(node) {{
+                if (node.nodeType !== 1) return;
+                // Log any element that looks like it could be accept/reject/agent related
+                const html = node.outerHTML || "";
+                const cls = node.className || "";
+                const text = (node.textContent || "").toLowerCase();
+                if (text.includes("accept") || text.includes("reject") || text.includes("discard")
+                    || text.includes("apply") || text.includes("revert")
+                    || cls.includes("diff") || cls.includes("inline")
+                    || cls.includes("agent") || cls.includes("action")
+                    || cls.includes("widget") || cls.includes("zone")
+                    || cls.includes("review") || cls.includes("change")
+                    || cls.includes("ghost") || cls.includes("suggest")) {{
+                    logElement("NEW NODE", node);
+                    // Also log interactive children
+                    const kids = node.querySelectorAll("button, a, [role='button'], .action-label, .codicon");
+                    kids.forEach(function(k) {{ logElement("  CHILD", k); }});
+                }}
+            }});
+        }});
+    }});
+    observer.observe(document.body, {{ childList: true, subtree: true }});
+    console.log("[DOKI DEBUG] MutationObserver installed - waiting for agent accept/reject buttons...");
+}})();
 {end_marker_js}
 """
 
@@ -332,4 +356,19 @@ print(f"Successfully injected {SELECTED_CHARACTER.capitalize()} background CSS i
 print(f"AND successfully injected {SELECTED_CHARACTER.capitalize()} sticker JS into {js_path}!")
 print(f"  - Sticker opacity: {STICKER_OPACITY}")
 print(f"  - Wallpaper opacity: {WALLPAPER_OPACITY}")
+
+# -------- RE-SIGN THE APP (macOS Gatekeeper) --------
+app_bundle = "/Applications/Antigravity.app"
+if os.path.isdir(app_bundle):
+    print("Re-signing Antigravity.app to satisfy macOS Gatekeeper...")
+    result = subprocess.run(
+        ["codesign", "--force", "--deep", "--sign", "-", app_bundle],
+        capture_output=True, text=True
+    )
+    if result.returncode == 0:
+        print("Re-signed successfully!")
+    else:
+        print(f"Warning: codesign failed (exit {result.returncode}): {result.stderr.strip()}")
+        print("You may need to run: codesign --force --deep --sign - /Applications/Antigravity.app")
+
 print("Please restart Antigravity to see the changes.")
