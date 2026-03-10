@@ -16,12 +16,8 @@ CHARACTERS = {
     "emilia_light":     ("/reZero/emilia/light/emilia_light.png", "emilia_light.png"),
     "beatrice":         ("/reZero/beatrice/beatrice.png", "beatrice.png"),
     
-    # === Darling in the Franxx ===
-    "zero_two_rose":    ("/franxx/zeroTwo/rose/zero_two_rose.png", "zero_two_rose.png"),
-    "zero_two_obsidian": ("/franxx/zeroTwo/obsidian/zero_two_obsidian.png", "zero_two_obsidian.png"),
-    "zero_two_sakura":  ("/franxx/zeroTwo/sakura/zero_two_sakura.png", "zero_two_sakura.png"),
-    "zero_two_lily":    ("/franxx/zeroTwo/lily/zero_two_lily.png", "zero_two_lily.png"),
-    "hiro":             ("/franxx/hiro/dark/hiro_dark.png", "hiro_dark.png"),
+
+
     
     # === DDLC (Literature Club) ===
     "monika_dark":      ("/literature/monika/dark/just_monika_dark.png", "just_monika_dark.png"),
@@ -240,7 +236,6 @@ injected_css = f"""
 .monaco-workbench .part.editor > .content .editor-container,
 .monaco-workbench .part.editor > .content .editor-instance,
 .monaco-workbench .part.editor > .content .monaco-editor,
-.monaco-workbench .part.editor > .content .monaco-editor-background,
 .monaco-workbench .part.editor > .content .overflow-guard,
 .monaco-workbench .part.editor > .content .margin,
 .monaco-workbench .part.editor > .content .monaco-scrollable-element,
@@ -250,6 +245,11 @@ injected_css = f"""
 .monaco-workbench .part.editor > .content .editor-scrollable {{
     background-color: transparent !important;
     background-image: none !important;
+}}
+
+/* Dark tint on the editor background layer to dim the wallpaper and improve text readability */
+.monaco-workbench .part.editor > .content .monaco-editor-background {{
+    background-color: rgba(0, 0, 0, {1.0 - WALLPAPER_OPACITY}) !important;
 }}
 {end_marker_css}
 """
