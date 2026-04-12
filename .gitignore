@@ -1,0 +1,9 @@
+# Ignore private configurations
+config.py
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
