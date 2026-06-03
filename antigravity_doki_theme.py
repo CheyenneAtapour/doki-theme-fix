@@ -124,7 +124,7 @@ if SELECTED_CHARACTER not in CHARACTERS:
 sticker_path, wallpaper_name = CHARACTERS[SELECTED_CHARACTER]
 
 # Default path for Antigravity, but can be overridden by a command line argument
-app_dir = "/Applications/Antigravity.app/Contents/Resources/app/out/vs/workbench"
+app_dir = "/Applications/Antigravity IDE.app/Contents/Resources/app/out/vs/workbench"
 if len(sys.argv) > 1:
     app_dir = os.path.dirname(os.path.expanduser(sys.argv[1]))
 
@@ -358,9 +358,9 @@ print(f"  - Sticker opacity: {STICKER_OPACITY}")
 print(f"  - Wallpaper opacity: {WALLPAPER_OPACITY}")
 
 # -------- RE-SIGN THE APP (macOS Gatekeeper) --------
-app_bundle = "/Applications/Antigravity.app"
+app_bundle = "/Applications/Antigravity IDE.app"
 if os.path.isdir(app_bundle):
-    print("Re-signing Antigravity.app to satisfy macOS Gatekeeper...")
+    print("Re-signing Antigravity IDE.app to satisfy macOS Gatekeeper...")
     result = subprocess.run(
         ["codesign", "--force", "--deep", "--sign", "-", app_bundle],
         capture_output=True, text=True
@@ -369,6 +369,6 @@ if os.path.isdir(app_bundle):
         print("Re-signed successfully!")
     else:
         print(f"Warning: codesign failed (exit {result.returncode}): {result.stderr.strip()}")
-        print("You may need to run: codesign --force --deep --sign - /Applications/Antigravity.app")
+        print("You may need to run: codesign --force --deep --sign - \"/Applications/Antigravity IDE.app\"")
 
 print("Please restart Antigravity to see the changes.")
